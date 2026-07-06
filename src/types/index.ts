@@ -6,6 +6,9 @@ export interface BlogPost {
   content: string
   author: string
   createdAt: string
+  image?: string // Base64 Data URL or remote image URL
+  status: 'pending' | 'approved' | 'rejected' // Moderation status
+  rejectionReason?: string // Set by admin when rejecting a post
 }
 
 export interface User {

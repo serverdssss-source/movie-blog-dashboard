@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import SplitText from '../components/SplitText'
+import StaggeredTextRoll from '../components/StaggeredTextRoll'
 
 export function LandingPage() {
   const [scrollOffset, setScrollOffset] = useState(0);
@@ -18,7 +19,7 @@ export function LandingPage() {
       const offset = (window.scrollY * 0.55) % loopWidth;
       setScrollOffset(offset);
     };
-
+    
     window.addEventListener('scroll', handleScroll);
     handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
@@ -29,27 +30,27 @@ export function LandingPage() {
       {/* Hero Section (First Section) */}
       <div className="bg-landing min-h-screen w-full flex flex-col relative">
         {/* Header Grid */}
-        <header className="grid grid-cols-1 md:grid-cols-3 items-center w-full px-5 md:px-[60px] py-6 md:py-[25px] absolute top-0 left-0 z-10 gap-4">
+        <header className="flex justify-between md:grid md:grid-cols-3 items-center w-full px-5 md:px-[60px] py-6 md:py-[25px] absolute top-0 left-0 z-10 gap-4">
           <div className="hidden md:block"></div> {/* Left Spacer */}
-          <div className="flex justify-center">
+          <div className="flex justify-start md:justify-center">
             <img
               src="/Prabhava_logo.png"
               alt="Prabhava Logo"
-              className="h-[70px] w-[180px] object-cover object-center cursor-pointer"
+              className="h-[50px] md:h-[70px] w-[130px] md:w-[180px] object-cover object-center cursor-pointer"
             />
           </div>
-          <div className="flex justify-center md:justify-end gap-[15px]">
+          <div className="flex justify-end md:justify-end gap-[15px] items-center">
             <Link
-              to="/login"
-              className="font-sans text-[15px] font-medium px-[18px] py-[8px] rounded-[6px] cursor-pointer transition-all duration-250 bg-white/20 hover:bg-white/30 text-white hover:-translate-y-[1px] text-center"
+              to="/login?mode=signup"
+              className="font-sans text-[14px] md:text-[15px] font-semibold px-5 py-2.5 rounded-full cursor-pointer bg-white text-black hover:bg-zinc-200 transition-colors shadow-sm text-center"
             >
-              Sign Up
+              <StaggeredTextRoll text="Sign Up" />
             </Link>
             <Link
-              to="/login"
-              className="font-sans text-[15px] font-medium px-[18px] py-[8px] rounded-[6px] cursor-pointer transition-all duration-250 bg-transparent text-white border border-white/50 hover:bg-white/10 hover:border-white/80 hover:-translate-y-[1px] text-center"
+              to="/login?mode=signin"
+              className="font-sans text-[14px] md:text-[15px] font-semibold px-5 py-2.5 rounded-full cursor-pointer bg-transparent text-white border border-white/50 hover:bg-white/10 hover:border-white/80 transition-all shadow-sm text-center"
             >
-              Login
+              <StaggeredTextRoll text="Login" />
             </Link>
           </div>
         </header>
@@ -77,13 +78,13 @@ export function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-[20px] sm:gap-[40px]">
             <Link
               to="/login"
-              className="text-[20px] font-semibold text-white no-underline relative transition-all duration-300 py-[5px] hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] hover:-translate-y-[1px] after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-[2px] after:bottom-0 after:left-0 after:bg-white after:origin-bottom-right after:transition-transform after:duration-250 after:ease-out hover:after:scale-x-100 hover:after:origin-bottom-left"
+              className="text-[20px] font-semibold text-white sliding-underline-link"
             >
               Join as a Member
             </Link>
             <Link
               to="/feed"
-              className="text-[20px] font-semibold text-white no-underline relative transition-all duration-300 py-[5px] hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] hover:-translate-y-[1px] after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-[2px] after:bottom-0 after:left-0 after:bg-white after:origin-bottom-right after:transition-transform after:duration-250 after:ease-out hover:after:scale-x-100 hover:after:origin-bottom-left"
+              className="text-[20px] font-semibold text-white sliding-underline-link"
             >
               Explore Posts
             </Link>
@@ -432,15 +433,15 @@ export function LandingPage() {
             to="/feed"
             className="px-8 py-3 rounded-full font-bold text-white bg-black hover:bg-[#e50914] transition-all duration-300 transform hover:-translate-y-0.5 shadow-md text-center"
           >
-            View All Posts
+            <StaggeredTextRoll text="View All Posts" />
           </Link>
         </div>
       </section>
 
       {/* Dynamic CTA Section (Fifth Section) */}
-      <section className="bg-landing text-white py-24 px-6 md:px-12 flex flex-col items-center relative overflow-hidden">
+      <section className="bg-landing text-white py-24 px-0 flex flex-col items-center relative overflow-hidden">
         {/* Content Container */}
-        <div className="relative z-10 text-center max-w-4xl mx-auto flex flex-col items-center">
+        <div className="relative z-10 text-center max-w-4xl mx-auto flex flex-col items-center px-6 md:px-12 w-full">
           {/* Heading */}
           <h2 className="text-[36px] md:text-[56px] font-extrabold tracking-tight mb-4 leading-tight">
             Your Take on Movies Deserves an Audience
@@ -450,83 +451,83 @@ export function LandingPage() {
           <p className="text-[18px] md:text-[21px] text-white/80 font-normal max-w-2xl mx-auto mb-12">
             Join the dashboard where every member is a critic.
           </p>
+        </div>
 
-          {/* Horizontal Curved Image Arc (3D Fish-eye curved perspective wrap - Full screen breakout scroll carousel) */}
-          <div className="w-screen overflow-hidden py-10 perspective-container">
-            <div
-              className="flex items-center justify-start gap-1.5 md:gap-3.5 select-none"
-              style={{
-                transform: `translate3d(-${scrollOffset}px, 0px, 0px)`,
-                width: 'max-content',
-                willChange: 'transform'
-              }}
-            >
-              {/* Set 1 */}
-              <div className="hidden lg:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-1 flex-shrink-0">
-                <img src="/G9_Blog_Banner.png" alt="Preview 1" className="w-full h-full object-cover scale-[1.6] origin-left" />
-              </div>
-              <div className="hidden md:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-2 flex-shrink-0">
-                <img src="/G9_Blog_Banner.png" alt="Preview 2" className="w-full h-full object-cover scale-[1.2]" />
-              </div>
-              <div className="w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-3 flex-shrink-0">
-                <img src="/G9_Blog_Banner.png" alt="Preview 3" className="w-full h-full object-cover scale-[1.5] origin-center" />
-              </div>
-              <div className="w-[160px] md:w-[230px] h-[230px] md:h-[320px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-4 z-20 flex-shrink-0">
-                <img src="/G9_Blog_Banner.png" alt="Preview 4" className="w-full h-full object-cover" />
-              </div>
-              <div className="w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-5 flex-shrink-0">
-                <img src="/G9_Blog_Banner.png" alt="Preview 5" className="w-full h-full object-cover" />
-              </div>
-              <div className="hidden md:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-6 flex-shrink-0">
-                <img src="/G9_Blog_Banner.png" alt="Preview 6" className="w-full h-full object-cover scale-[1.6] origin-right" />
-              </div>
-              <div className="hidden lg:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-7 flex-shrink-0">
-                <img src="/G9_Blog_Banner.png" alt="Preview 7" className="w-full h-full object-cover" />
-              </div>
+        {/* Horizontal Curved Image Arc (3D Fish-eye curved perspective wrap - Full screen breakout scroll carousel) */}
+        <div className="w-full overflow-hidden py-10 perspective-container relative z-10">
+          <div
+            className="flex items-center justify-start gap-1.5 md:gap-3.5 select-none"
+            style={{
+              transform: `translate3d(-${scrollOffset}px, 0px, 0px)`,
+              width: 'max-content',
+              willChange: 'transform'
+            }}
+          >
+            {/* Set 1 */}
+            <div className="hidden lg:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-1 flex-shrink-0">
+              <img src="/G9_Blog_Banner.png" alt="Preview 1" className="w-full h-full object-cover scale-[1.6] origin-left" />
+            </div>
+            <div className="hidden md:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-2 flex-shrink-0">
+              <img src="/G9_Blog_Banner.png" alt="Preview 2" className="w-full h-full object-cover scale-[1.2]" />
+            </div>
+            <div className="w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-3 flex-shrink-0">
+              <img src="/G9_Blog_Banner.png" alt="Preview 3" className="w-full h-full object-cover scale-[1.5] origin-center" />
+            </div>
+            <div className="w-[160px] md:w-[230px] h-[230px] md:h-[320px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-4 z-20 flex-shrink-0">
+              <img src="/G9_Blog_Banner.png" alt="Preview 4" className="w-full h-full object-cover" />
+            </div>
+            <div className="w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-5 flex-shrink-0">
+              <img src="/G9_Blog_Banner.png" alt="Preview 5" className="w-full h-full object-cover" />
+            </div>
+            <div className="hidden md:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-6 flex-shrink-0">
+              <img src="/G9_Blog_Banner.png" alt="Preview 6" className="w-full h-full object-cover scale-[1.6] origin-right" />
+            </div>
+            <div className="hidden lg:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-7 flex-shrink-0">
+              <img src="/G9_Blog_Banner.png" alt="Preview 7" className="w-full h-full object-cover" />
+            </div>
 
-              {/* Set 2 */}
-              <div className="hidden lg:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-1 flex-shrink-0">
-                <img src="/G9_Blog_Banner.png" alt="Preview 1" className="w-full h-full object-cover scale-[1.6] origin-left" />
-              </div>
-              <div className="hidden md:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-2 flex-shrink-0">
-                <img src="/G9_Blog_Banner.png" alt="Preview 2" className="w-full h-full object-cover scale-[1.2]" />
-              </div>
-              <div className="w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-3 flex-shrink-0">
-                <img src="/G9_Blog_Banner.png" alt="Preview 3" className="w-full h-full object-cover scale-[1.5] origin-center" />
-              </div>
-              <div className="w-[160px] md:w-[230px] h-[230px] md:h-[320px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-4 z-20 flex-shrink-0">
-                <img src="/G9_Blog_Banner.png" alt="Preview 4" className="w-full h-full object-cover" />
-              </div>
-              <div className="w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-5 flex-shrink-0">
-                <img src="/G9_Blog_Banner.png" alt="Preview 5" className="w-full h-full object-cover" />
-              </div>
-              <div className="hidden md:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-6 flex-shrink-0">
-                <img src="/G9_Blog_Banner.png" alt="Preview 6" className="w-full h-full object-cover scale-[1.6] origin-right" />
-              </div>
-              <div className="hidden lg:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-7 flex-shrink-0">
-                <img src="/G9_Blog_Banner.png" alt="Preview 7" className="w-full h-full object-cover" />
-              </div>
+            {/* Set 2 */}
+            <div className="hidden lg:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-1 flex-shrink-0">
+              <img src="/G9_Blog_Banner.png" alt="Preview 1" className="w-full h-full object-cover scale-[1.6] origin-left" />
+            </div>
+            <div className="hidden md:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-2 flex-shrink-0">
+              <img src="/G9_Blog_Banner.png" alt="Preview 2" className="w-full h-full object-cover scale-[1.2]" />
+            </div>
+            <div className="w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-3 flex-shrink-0">
+              <img src="/G9_Blog_Banner.png" alt="Preview 3" className="w-full h-full object-cover scale-[1.5] origin-center" />
+            </div>
+            <div className="w-[160px] md:w-[230px] h-[230px] md:h-[320px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-4 z-20 flex-shrink-0">
+              <img src="/G9_Blog_Banner.png" alt="Preview 4" className="w-full h-full object-cover" />
+            </div>
+            <div className="w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-5 flex-shrink-0">
+              <img src="/G9_Blog_Banner.png" alt="Preview 5" className="w-full h-full object-cover" />
+            </div>
+            <div className="hidden md:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-6 flex-shrink-0">
+              <img src="/G9_Blog_Banner.png" alt="Preview 6" className="w-full h-full object-cover scale-[1.6] origin-right" />
+            </div>
+            <div className="hidden lg:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-7 flex-shrink-0">
+              <img src="/G9_Blog_Banner.png" alt="Preview 7" className="w-full h-full object-cover" />
             </div>
           </div>
+        </div>
 
-          {/* CTA Links Container */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-[20px] sm:gap-[40px] mt-8 relative">
-            {/* Primary Link */}
-            <Link
-              to="/login?mode=signup"
-              className="text-[20px] font-semibold text-white no-underline relative transition-all duration-300 py-[5px] hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] hover:-translate-y-[1px] after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-[2px] after:bottom-0 after:left-0 after:bg-white after:origin-bottom-right after:transition-transform after:duration-250 after:ease-out hover:after:scale-x-100 hover:after:origin-bottom-left"
-            >
-              Start Writing
-            </Link>
+        {/* CTA Links Container */}
+        <div className="relative z-10 flex flex-col sm:flex-row items-center justify-center gap-[20px] sm:gap-[40px] mt-8 relative px-6 md:px-12 w-full">
+          {/* Primary Link */}
+          <Link
+            to="/login?mode=signup"
+            className="text-[20px] font-semibold text-white sliding-underline-link"
+          >
+            Start Writing
+          </Link>
 
-            {/* Secondary Link */}
-            <Link
-              to="/feed"
-              className="text-[20px] font-semibold text-white no-underline relative transition-all duration-300 py-[5px] hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] hover:-translate-y-[1px] after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-[2px] after:bottom-0 after:left-0 after:bg-white after:origin-bottom-right after:transition-transform after:duration-250 after:ease-out hover:after:scale-x-100 hover:after:origin-bottom-left"
-            >
-              Explore Reviews
-            </Link>
-          </div>
+          {/* Secondary Link */}
+          <Link
+            to="/feed"
+            className="text-[20px] font-semibold text-white sliding-underline-link"
+          >
+            Explore Reviews
+          </Link>
         </div>
       </section>
 
@@ -548,17 +549,17 @@ export function LandingPage() {
           {/* Column 2: Navigation Links */}
           <div className="flex flex-col gap-3 items-start">
             <h4 className="text-black font-bold text-[15px] uppercase tracking-wider mb-2">Explore</h4>
-            <Link to="/" className="text-[14px] hover:text-[#e50914] transition-colors duration-200">Home</Link>
-            <Link to="/feed" className="text-[14px] hover:text-[#e50914] transition-colors duration-200">Reviews Feed</Link>
-            <Link to="/login" className="text-[14px] hover:text-[#e50914] transition-colors duration-200">Start Writing</Link>
+            <Link to="/" className="text-[14px] hover:text-[#e50914] transition-colors duration-200 sliding-underline-link">Home</Link>
+            <Link to="/feed" className="text-[14px] hover:text-[#e50914] transition-colors duration-200 sliding-underline-link">Reviews Feed</Link>
+            <Link to="/login" className="text-[14px] hover:text-[#e50914] transition-colors duration-200 sliding-underline-link">Start Writing</Link>
           </div>
 
           {/* Column 3: Social & Community */}
           <div className="flex flex-col gap-3 items-start">
             <h4 className="text-black font-bold text-[15px] uppercase tracking-wider mb-2">Community</h4>
-            <a href="https://letterboxd.com" target="_blank" rel="noreferrer" className="text-[14px] hover:text-[#e50914] transition-colors duration-200">Letterboxd</a>
-            <a href="https://twitter.com" target="_blank" rel="noreferrer" className="text-[14px] hover:text-[#e50914] transition-colors duration-200">Twitter / X</a>
-            <a href="https://instagram.com" target="_blank" rel="noreferrer" className="text-[14px] hover:text-[#e50914] transition-colors duration-200">Instagram</a>
+            <a href="https://letterboxd.com" target="_blank" rel="noreferrer" className="text-[14px] hover:text-[#e50914] transition-colors duration-200 sliding-underline-link">Letterboxd</a>
+            <a href="https://twitter.com" target="_blank" rel="noreferrer" className="text-[14px] hover:text-[#e50914] transition-colors duration-200 sliding-underline-link">Twitter / X</a>
+            <a href="https://instagram.com" target="_blank" rel="noreferrer" className="text-[14px] hover:text-[#e50914] transition-colors duration-200 sliding-underline-link">Instagram</a>
           </div>
         </div>
 
@@ -568,8 +569,8 @@ export function LandingPage() {
             © 2026 Prabhava. All rights reserved. Created for movie critics.
           </span>
           <div className="flex gap-6 text-[13px]">
-            <a href="#" className="hover:text-black transition-colors duration-200">Terms of Use</a>
-            <a href="#" className="hover:text-black transition-colors duration-200">Privacy Policy</a>
+            <a href="#" className="hover:text-black transition-colors duration-200 sliding-underline-link">Terms of Use</a>
+            <a href="#" className="hover:text-black transition-colors duration-200 sliding-underline-link">Privacy Policy</a>
           </div>
         </div>
       </footer>
