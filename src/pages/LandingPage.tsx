@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import type { BlogPost } from '../types'
 import SplitText from '../components/SplitText'
 import StaggeredTextRoll from '../components/StaggeredTextRoll'
 
-export function LandingPage() {
+export function LandingPage({ posts = [] }: { posts?: BlogPost[] }) {
   const [scrollOffset, setScrollOffset] = useState(0);
+  const navigate = useNavigate()
+  const topPosts = posts.filter(p => p.status === 'approved').slice(0, 4)
+  const availableImages = posts.filter(p => p.status === 'approved' && p.image).map(p => p.image as string)
+  const carouselImages = Array(14).fill('').map((_, i) => availableImages.length > 0 ? availableImages[i % availableImages.length] : '/G9_Blog_Banner.png')
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -247,186 +253,45 @@ export function LandingPage() {
 
         {/* 2x2 Grid of 4 Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl w-full mx-auto mb-16">
-          {/* Card 1 */}
-          <div className="bg-gradient-to-br from-[#800c0c] to-[#140202] rounded-[24px] p-8 flex flex-col gap-4 text-white shadow-lg relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:translate-y-[-2px] group">
-            {/* Top Heading/Title */}
-            <div className="flex flex-col gap-1 text-left">
-              <span className="text-[13px] text-white/60 font-semibold tracking-wider uppercase">
-                By [Author Name] - [Genre] - ★ [Rating]
-              </span>
-              <h3 className="text-[22px] md:text-[24px] font-extrabold text-white tracking-tight leading-tight flex items-center justify-between">
-                <span>Mainstream Cinema v/s Independent Films</span>
-                <span className="arrow-animate ml-2 text-white/50">→</span>
-              </h3>
-            </div>
+          {topPosts.length === 0 ? (
+            <div className="col-span-1 md:col-span-2 text-center text-zinc-500 py-12">No posts available yet. Check back soon!</div>
+          ) : (
+            topPosts.map(post => (
+              <div 
+                key={post.id} 
+                onClick={() => navigate(`/post/${post.id}`)} 
+                className="bg-gradient-to-br from-[#800c0c] to-[#140202] rounded-[24px] p-8 flex flex-col gap-4 text-white shadow-lg relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:translate-y-[-2px] group"
+              >
+                <div className="flex flex-col gap-1 text-left">
+                  <span className="text-[13px] text-white/60 font-semibold tracking-wider uppercase">
+                    By {post.author} - {post.category} {post.rating ? `- ★ ${post.rating}` : ''}
+                  </span>
+                  <h3 className="text-[22px] md:text-[24px] font-extrabold text-white tracking-tight leading-tight flex items-center justify-between">
+                    <span className="line-clamp-2">{post.title}</span>
+                    <span className="arrow-animate ml-2 text-white/50">→</span>
+                  </h3>
+                </div>
 
-            {/* Vertical fanned-out image container (Centered with rule-of-thirds zoom) */}
-            <div className="relative h-[155px] w-full flex items-center justify-center my-6 overflow-visible select-none">
-              {/* Left Image (Zoomed on Left Third) */}
-              <div className="w-[90px] h-[130px] overflow-hidden rounded-[16px] border-2 border-white shadow-lg absolute fanned-left z-10">
-                <img
-                  src="/G9_Blog_Banner.png"
-                  alt="Mainstream Cinema v/s Independent Films Left"
-                  className="w-full h-full object-cover scale-[1.7] origin-left"
-                />
-              </div>
-              {/* Center Image (Original / Uncropped) */}
-              <div className="w-[90px] h-[130px] overflow-hidden rounded-[16px] border-2 border-white shadow-lg absolute fanned-center z-20">
-                <img
-                  src="/G9_Blog_Banner.png"
-                  alt="Mainstream Cinema v/s Independent Films Center"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              {/* Right Image (Zoomed on Right Third) */}
-              <div className="w-[90px] h-[130px] overflow-hidden rounded-[16px] border-2 border-white shadow-lg absolute fanned-right z-30">
-                <img
-                  src="/G9_Blog_Banner.png"
-                  alt="Mainstream Cinema v/s Independent Films Right"
-                  className="w-full h-full object-cover scale-[1.7] origin-right"
-                />
-              </div>
-            </div>
+                <div className="relative h-[155px] w-full flex items-center justify-center my-6 overflow-visible select-none">
+                  <div className="w-[90px] h-[130px] overflow-hidden rounded-[16px] border-2 border-white shadow-lg absolute fanned-left z-10">
+                    <img src={post.image || '/G9_Blog_Banner.png'} alt={post.title} className="w-full h-full object-cover scale-[1.7] origin-left" />
+                  </div>
+                  <div className="w-[90px] h-[130px] overflow-hidden rounded-[16px] border-2 border-white shadow-lg absolute fanned-center z-20">
+                    <img src={post.image || '/G9_Blog_Banner.png'} alt={post.title} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="w-[90px] h-[130px] overflow-hidden rounded-[16px] border-2 border-white shadow-lg absolute fanned-right z-30">
+                    <img src={post.image || '/G9_Blog_Banner.png'} alt={post.title} className="w-full h-full object-cover scale-[1.7] origin-right" />
+                  </div>
+                </div>
 
-            {/* Description (Bottom) */}
-            <p className="text-[15px] text-white/80 leading-relaxed font-normal text-left">
-              See what the community is talking about.
-            </p>
-          </div>
-
-          {/* Card 2 */}
-          <div className="bg-gradient-to-br from-[#800c0c] to-[#140202] rounded-[24px] p-8 flex flex-col gap-4 text-white shadow-lg relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:translate-y-[-2px] group">
-            {/* Top Heading/Title */}
-            <div className="flex flex-col gap-1 text-left">
-              <span className="text-[13px] text-white/60 font-semibold tracking-wider uppercase">
-                By [Author Name] - [Genre] - ★ [Rating]
-              </span>
-              <h3 className="text-[22px] md:text-[24px] font-extrabold text-white tracking-tight leading-tight flex items-center justify-between">
-                <span>Why Christopher Nolan's Cinematography Hooks Us</span>
-                <span className="arrow-animate ml-2 text-white/50">→</span>
-              </h3>
-            </div>
-
-            {/* Vertical fanned-out image container (Centered with rule-of-thirds zoom) */}
-            <div className="relative h-[155px] w-full flex items-center justify-center my-6 overflow-visible select-none">
-              <div className="w-[90px] h-[130px] overflow-hidden rounded-[16px] border-2 border-white shadow-lg absolute fanned-left z-10">
-                <img
-                  src="/G9_Blog_Banner.png"
-                  alt="Nolan Cinematography Left"
-                  className="w-full h-full object-cover scale-[1.7] origin-left"
-                />
+                <p className="text-[15px] text-white/80 leading-relaxed font-normal text-left line-clamp-2">
+                  {post.content}
+                </p>
               </div>
-              <div className="w-[90px] h-[130px] overflow-hidden rounded-[16px] border-2 border-white shadow-lg absolute fanned-center z-20">
-                <img
-                  src="/G9_Blog_Banner.png"
-                  alt="Nolan Cinematography Center"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="w-[90px] h-[130px] overflow-hidden rounded-[16px] border-2 border-white shadow-lg absolute fanned-right z-30">
-                <img
-                  src="/G9_Blog_Banner.png"
-                  alt="Nolan Cinematography Right"
-                  className="w-full h-full object-cover scale-[1.7] origin-right"
-                />
-              </div>
-            </div>
-
-            {/* Description (Bottom) */}
-            <p className="text-[15px] text-white/80 leading-relaxed font-normal text-left">
-              An in-depth look at his visual scale, practical effects, and narrative framing.
-            </p>
-          </div>
-
-          {/* Card 3 */}
-          <div className="bg-gradient-to-br from-[#800c0c] to-[#140202] rounded-[24px] p-8 flex flex-col gap-4 text-white shadow-lg relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:translate-y-[-2px] group">
-            {/* Top Heading/Title */}
-            <div className="flex flex-col gap-1 text-left">
-              <span className="text-[13px] text-white/60 font-semibold tracking-wider uppercase">
-                By [Author Name] - [Genre] - ★ [Rating]
-              </span>
-              <h3 className="text-[22px] md:text-[24px] font-extrabold text-white tracking-tight leading-tight flex items-center justify-between">
-                <span>The Rise of Sci-Fi in Modern Indian Cinema</span>
-                <span className="arrow-animate ml-2 text-white/50">→</span>
-              </h3>
-            </div>
-
-            {/* Vertical fanned-out image container (Centered with rule-of-thirds zoom) */}
-            <div className="relative h-[155px] w-full flex items-center justify-center my-6 overflow-visible select-none">
-              <div className="w-[90px] h-[130px] overflow-hidden rounded-[16px] border-2 border-white shadow-lg absolute fanned-left z-10">
-                <img
-                  src="/G9_Blog_Banner.png"
-                  alt="Sci-Fi Indian Cinema Left"
-                  className="w-full h-full object-cover scale-[1.7] origin-left"
-                />
-              </div>
-              <div className="w-[90px] h-[130px] overflow-hidden rounded-[16px] border-2 border-white shadow-lg absolute fanned-center z-20">
-                <img
-                  src="/G9_Blog_Banner.png"
-                  alt="Sci-Fi Indian Cinema Center"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="w-[90px] h-[130px] overflow-hidden rounded-[16px] border-2 border-white shadow-lg absolute fanned-right z-30">
-                <img
-                  src="/G9_Blog_Banner.png"
-                  alt="Sci-Fi Indian Cinema Right"
-                  className="w-full h-full object-cover scale-[1.7] origin-right"
-                />
-              </div>
-            </div>
-
-            {/* Description (Bottom) */}
-            <p className="text-[15px] text-white/80 leading-relaxed font-normal text-left">
-              How new-age directors are scaling up storytelling with premium VFX.
-            </p>
-          </div>
-
-          {/* Card 4 */}
-          <div className="bg-gradient-to-br from-[#800c0c] to-[#140202] rounded-[24px] p-8 flex flex-col gap-4 text-white shadow-lg relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:translate-y-[-2px] group">
-            {/* Top Heading/Title */}
-            <div className="flex flex-col gap-1 text-left">
-              <span className="text-[13px] text-white/60 font-semibold tracking-wider uppercase">
-                By [Author Name] - [Genre] - ★ [Rating]
-              </span>
-              <h3 className="text-[22px] md:text-[24px] font-extrabold text-white tracking-tight leading-tight flex items-center justify-between">
-                <span>Top 10 Hidden Gem Thrillers You Missed in 2025</span>
-                <span className="arrow-animate ml-2 text-white/50">→</span>
-              </h3>
-            </div>
-
-            {/* Vertical fanned-out image container (Centered with rule-of-thirds zoom) */}
-            <div className="relative h-[155px] w-full flex items-center justify-center my-6 overflow-visible select-none">
-              <div className="w-[90px] h-[130px] overflow-hidden rounded-[16px] border-2 border-white shadow-lg absolute fanned-left z-10">
-                <img
-                  src="/G9_Blog_Banner.png"
-                  alt="Hidden Gem Thrillers Left"
-                  className="w-full h-full object-cover scale-[1.7] origin-left"
-                />
-              </div>
-              <div className="w-[90px] h-[130px] overflow-hidden rounded-[16px] border-2 border-white shadow-lg absolute fanned-center z-20">
-                <img
-                  src="/G9_Blog_Banner.png"
-                  alt="Hidden Gem Thrillers Center"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="w-[90px] h-[130px] overflow-hidden rounded-[16px] border-2 border-white shadow-lg absolute fanned-right z-30">
-                <img
-                  src="/G9_Blog_Banner.png"
-                  alt="Hidden Gem Thrillers Right"
-                  className="w-full h-full object-cover scale-[1.7] origin-right"
-                />
-              </div>
-            </div>
-
-            {/* Description (Bottom) */}
-            <p className="text-[15px] text-white/80 leading-relaxed font-normal text-left">
-              Our curated list of under-the-radar psychological thrillers.
-            </p>
-          </div>
+            ))
+          )}
         </div>
-
+        
         {/* CTA Button in Center */}
         <div className="flex justify-center mt-4">
           <Link
@@ -465,48 +330,48 @@ export function LandingPage() {
           >
             {/* Set 1 */}
             <div className="hidden lg:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-1 flex-shrink-0">
-              <img src="/G9_Blog_Banner.png" alt="Preview 1" className="w-full h-full object-cover scale-[1.6] origin-left" />
+              <img src={carouselImages[0]} alt="Preview 1" className="w-full h-full object-cover scale-[1.6] origin-left" />
             </div>
             <div className="hidden md:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-2 flex-shrink-0">
-              <img src="/G9_Blog_Banner.png" alt="Preview 2" className="w-full h-full object-cover scale-[1.2]" />
+              <img src={carouselImages[1]} alt="Preview 2" className="w-full h-full object-cover scale-[1.2]" />
             </div>
             <div className="w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-3 flex-shrink-0">
-              <img src="/G9_Blog_Banner.png" alt="Preview 3" className="w-full h-full object-cover scale-[1.5] origin-center" />
+              <img src={carouselImages[2]} alt="Preview 3" className="w-full h-full object-cover scale-[1.5] origin-center" />
             </div>
             <div className="w-[160px] md:w-[230px] h-[230px] md:h-[320px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-4 z-20 flex-shrink-0">
-              <img src="/G9_Blog_Banner.png" alt="Preview 4" className="w-full h-full object-cover" />
+              <img src={carouselImages[3]} alt="Preview 4" className="w-full h-full object-cover" />
             </div>
             <div className="w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-5 flex-shrink-0">
-              <img src="/G9_Blog_Banner.png" alt="Preview 5" className="w-full h-full object-cover" />
+              <img src={carouselImages[4]} alt="Preview 5" className="w-full h-full object-cover" />
             </div>
             <div className="hidden md:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-6 flex-shrink-0">
-              <img src="/G9_Blog_Banner.png" alt="Preview 6" className="w-full h-full object-cover scale-[1.6] origin-right" />
+              <img src={carouselImages[5]} alt="Preview 6" className="w-full h-full object-cover scale-[1.6] origin-right" />
             </div>
             <div className="hidden lg:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-7 flex-shrink-0">
-              <img src="/G9_Blog_Banner.png" alt="Preview 7" className="w-full h-full object-cover" />
+              <img src={carouselImages[6]} alt="Preview 7" className="w-full h-full object-cover" />
             </div>
 
             {/* Set 2 */}
             <div className="hidden lg:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-1 flex-shrink-0">
-              <img src="/G9_Blog_Banner.png" alt="Preview 1" className="w-full h-full object-cover scale-[1.6] origin-left" />
+              <img src={carouselImages[7]} alt="Preview 1" className="w-full h-full object-cover scale-[1.6] origin-left" />
             </div>
             <div className="hidden md:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-2 flex-shrink-0">
-              <img src="/G9_Blog_Banner.png" alt="Preview 2" className="w-full h-full object-cover scale-[1.2]" />
+              <img src={carouselImages[8]} alt="Preview 2" className="w-full h-full object-cover scale-[1.2]" />
             </div>
             <div className="w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-3 flex-shrink-0">
-              <img src="/G9_Blog_Banner.png" alt="Preview 3" className="w-full h-full object-cover scale-[1.5] origin-center" />
+              <img src={carouselImages[9]} alt="Preview 3" className="w-full h-full object-cover scale-[1.5] origin-center" />
             </div>
             <div className="w-[160px] md:w-[230px] h-[230px] md:h-[320px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-4 z-20 flex-shrink-0">
-              <img src="/G9_Blog_Banner.png" alt="Preview 4" className="w-full h-full object-cover" />
+              <img src={carouselImages[10]} alt="Preview 4" className="w-full h-full object-cover" />
             </div>
             <div className="w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-5 flex-shrink-0">
-              <img src="/G9_Blog_Banner.png" alt="Preview 5" className="w-full h-full object-cover" />
+              <img src={carouselImages[11]} alt="Preview 5" className="w-full h-full object-cover" />
             </div>
             <div className="hidden md:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-6 flex-shrink-0">
-              <img src="/G9_Blog_Banner.png" alt="Preview 6" className="w-full h-full object-cover scale-[1.6] origin-right" />
+              <img src={carouselImages[12]} alt="Preview 6" className="w-full h-full object-cover scale-[1.6] origin-right" />
             </div>
             <div className="hidden lg:block w-[150px] md:w-[220px] h-[220px] md:h-[310px] overflow-hidden rounded-[20px] shadow-2xl fisheye-card-7 flex-shrink-0">
-              <img src="/G9_Blog_Banner.png" alt="Preview 7" className="w-full h-full object-cover" />
+              <img src={carouselImages[13]} alt="Preview 7" className="w-full h-full object-cover" />
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { BlogPost } from '../types'
 
@@ -13,6 +13,14 @@ export function AdminPage({ posts, onDelete, onApprove, onReject }: AdminPagePro
   const navigate = useNavigate()
   const [rejectingId, setRejectingId] = useState<string | null>(null)
   const [rejectionReason, setRejectionReason] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeFilter, setActiveFilter] = useState<'all'|'pending'|'approved'|'rejected'>('all')
+  const [sortBy, setSortBy] = useState<'newest'|'oldest'|'rating-high'|'rating-low'>('newest')
+  const [currentPage, setCurrentPage] = useState(1)
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, activeFilter, sortBy])
 
   const handleDeleteClick = (postId: string, title: string) => {
     const confirmation = prompt(`To confirm deleting the post "${title}", please type "DELETE":`)
@@ -39,7 +47,89 @@ export function AdminPage({ posts, onDelete, onApprove, onReject }: AdminPagePro
     }
   }
 
+  let processedPosts = activeFilter === 'all' ? posts : posts.filter(p => p.status === activeFilter)
+
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase()
+    processedPosts = processedPosts.filter(p => 
+      p.title.toLowerCase().includes(q) || 
+      p.content.toLowerCase().includes(q) || 
+      p.category.toLowerCase().includes(q) ||
+      p.author.toLowerCase().includes(q)
+    )
+  }
+
+  processedPosts = [...processedPosts].sort((a, b) => {
+    if (sortBy === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    if (sortBy === 'oldest') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    if (sortBy === 'rating-high') return (b.rating || 0) - (a.rating || 0)
+    if (sortBy === 'rating-low') return (a.rating || 0) - (b.rating || 0)
+    return 0
+  })
+
+  const POSTS_PER_PAGE = 6
+  const totalPages = Math.ceil(processedPosts.length / POSTS_PER_PAGE)
+  const paginatedPosts = processedPosts.slice((currentPage - 1) * POSTS_PER_PAGE, currentPage * POSTS_PER_PAGE)
+
   const pendingCount = posts.filter(p => p.status === 'pending').length
+
+  const PaginationControls = () => {
+    const displayTotal = Math.max(1, totalPages)
+
+    const getPageNumbers = () => {
+      const pages = []
+      if (displayTotal <= 5) {
+        for (let i = 1; i <= displayTotal; i++) pages.push(i)
+      } else {
+        if (currentPage <= 3) {
+          pages.push(1, 2, 3, 4, '...', displayTotal)
+        } else if (currentPage >= displayTotal - 2) {
+          pages.push(1, '...', displayTotal - 3, displayTotal - 2, displayTotal - 1, displayTotal)
+        } else {
+          pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', displayTotal)
+        }
+      }
+      return pages
+    }
+
+    return (
+      <div className="flex items-center justify-center gap-1 my-6 w-full">
+        <button 
+          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+          disabled={currentPage === 1}
+          className="w-8 h-8 flex items-center justify-center rounded-md border border-zinc-200 text-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-zinc-50 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+          </svg>
+        </button>
+        
+        {getPageNumbers().map((num, i) => (
+          num === '...' ? (
+            <span key={`ellipsis-${i}`} className="w-8 h-8 flex items-center justify-center text-zinc-400">...</span>
+          ) : (
+            <button
+              key={`page-${num}`}
+              onClick={() => setCurrentPage(num as number)}
+              className={`w-8 h-8 flex items-center justify-center rounded-md text-[13px] font-semibold transition-colors ${currentPage === num ? 'bg-zinc-900 text-white' : 'border border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}
+            >
+              {num}
+            </button>
+          )
+        ))}
+
+        <button 
+          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+          disabled={currentPage === displayTotal || displayTotal === 1}
+          className="w-8 h-8 flex items-center justify-center rounded-md border border-zinc-200 text-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-zinc-50 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+          </svg>
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="bg-white border border-zinc-200 rounded-[16px] p-6 md:p-[35px] shadow-sm">
@@ -55,8 +145,72 @@ export function AdminPage({ posts, onDelete, onApprove, onReject }: AdminPagePro
         Click <strong>View Post</strong> to read the full content and take moderation action from a dedicated review page.
       </p>
 
+      {/* Filter Tabs */}
+      <div className="mb-4 flex gap-2 flex-wrap">
+        {[
+          { key: 'all', label: 'All Posts' },
+          { key: 'pending', label: 'Pending' },
+          { key: 'approved', label: 'Approved' },
+          { key: 'rejected', label: 'Rejected' },
+        ].map(f => (
+          <button
+            key={f.key}
+            onClick={() => setActiveFilter(f.key as any)}
+            className={`px-4 py-2 rounded-[30px] text-[13px] font-semibold border transition-all duration-200 cursor-pointer ${
+              activeFilter === f.key 
+                ? 'bg-zinc-900 border-zinc-900 text-white' 
+                : 'bg-white border-zinc-200 text-zinc-600 hover:border-zinc-400 hover:bg-zinc-50'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Search and Sort Row */}
+      <div className="flex items-center gap-2 mb-6 w-full overflow-x-auto pb-1 hide-scrollbar">
+        {/* Search */}
+        <div className="relative flex-grow min-w-[120px]">
+          <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search posts or authors..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-white border border-zinc-200 rounded-[8px] pl-9 pr-3 py-[9px] text-[13px] font-medium text-zinc-900 focus:outline-none focus:border-zinc-400 transition-colors shadow-sm placeholder-zinc-400"
+          />
+        </div>
+        
+        {/* Sort */}
+        <div className="relative flex-shrink-0">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M5.25 12h13.5m-10.5 5.25h7.5" />
+            </svg>
+          </div>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            className="appearance-none bg-white border border-zinc-200 rounded-[8px] pl-9 pr-7 py-[9px] text-[13px] font-semibold text-zinc-700 cursor-pointer focus:outline-none focus:border-zinc-400 transition-colors shadow-sm"
+          >
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="rating-high">Highest Rated</option>
+            <option value="rating-low">Lowest Rated</option>
+          </select>
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
+              <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
       <div className="overflow-x-auto">
-        {posts.length === 0 ? (
+        <PaginationControls />
+        {paginatedPosts.length === 0 ? (
           <p className="text-zinc-400 text-center py-[30px]">No posts found.</p>
         ) : (
           <table className="w-full border-collapse mt-[15px]">
@@ -70,7 +224,7 @@ export function AdminPage({ posts, onDelete, onApprove, onReject }: AdminPagePro
               </tr>
             </thead>
             <tbody>
-              {posts.map(post => (
+              {paginatedPosts.map(post => (
                 <>
                   <tr key={post.id} className="border-b border-zinc-100 hover:bg-zinc-50/50 transition-colors duration-150">
                     <td className="p-[14px]">
@@ -169,6 +323,7 @@ export function AdminPage({ posts, onDelete, onApprove, onReject }: AdminPagePro
             </tbody>
           </table>
         )}
+        <PaginationControls />
       </div>
     </div>
   )

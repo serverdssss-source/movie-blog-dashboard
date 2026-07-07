@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { BlogPost } from '../types'
 
@@ -9,11 +9,27 @@ interface FeedPageProps {
 export function FeedPage({ posts }: FeedPageProps) {
   const [filter, setFilter] = useState<string>('All')
   const [sort, setSort] = useState<string>('newest')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filter, sort, searchQuery])
   const navigate = useNavigate()
 
-  const basePosts = filter === 'All'
+  let basePosts = filter === 'All'
     ? posts.filter(p => p.status === 'approved')
     : posts.filter(p => p.category === filter && p.status === 'approved')
+
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase()
+    basePosts = basePosts.filter(p => 
+      p.title.toLowerCase().includes(q) || 
+      p.content.toLowerCase().includes(q) || 
+      p.category.toLowerCase().includes(q) ||
+      p.author.toLowerCase().includes(q)
+    )
+  }
 
   const filteredPosts = [...basePosts].sort((a, b) => {
     switch (sort) {
@@ -24,27 +40,89 @@ export function FeedPage({ posts }: FeedPageProps) {
     }
   })
 
+  const POSTS_PER_PAGE = 6
+  const totalPages = Math.ceil(filteredPosts.length / POSTS_PER_PAGE)
+  const paginatedPosts = filteredPosts.slice((currentPage - 1) * POSTS_PER_PAGE, currentPage * POSTS_PER_PAGE)
+
+  const PaginationControls = ({ className = 'my-6 w-full' }: { className?: string }) => {
+    const displayTotal = Math.max(1, totalPages)
+
+    const getPageNumbers = () => {
+      const pages = []
+      if (displayTotal <= 5) {
+        for (let i = 1; i <= displayTotal; i++) pages.push(i)
+      } else {
+        if (currentPage <= 3) {
+          pages.push(1, 2, 3, 4, '...', displayTotal)
+        } else if (currentPage >= displayTotal - 2) {
+          pages.push(1, '...', displayTotal - 3, displayTotal - 2, displayTotal - 1, displayTotal)
+        } else {
+          pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', displayTotal)
+        }
+      }
+      return pages
+    }
+
+    return (
+      <div className={`flex items-center justify-center gap-1 ${className}`}>
+        <button 
+          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+          disabled={currentPage === 1}
+          className="w-8 h-8 flex items-center justify-center rounded-md border border-zinc-200 text-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-zinc-50 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+          </svg>
+        </button>
+        
+        {getPageNumbers().map((num, i) => (
+          num === '...' ? (
+            <span key={`ellipsis-${i}`} className="w-8 h-8 flex items-center justify-center text-zinc-400">...</span>
+          ) : (
+            <button
+              key={`page-${num}`}
+              onClick={() => setCurrentPage(num as number)}
+              className={`w-8 h-8 flex items-center justify-center rounded-md text-[13px] font-semibold transition-colors ${currentPage === num ? 'bg-zinc-900 text-white' : 'border border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}
+            >
+              {num}
+            </button>
+          )
+        ))}
+
+        <button 
+          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+          disabled={currentPage === displayTotal || displayTotal === 1}
+          className="w-8 h-8 flex items-center justify-center rounded-md border border-zinc-200 text-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-zinc-50 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+          </svg>
+        </button>
+      </div>
+    )
+  }
+
   const getCategoryBadgeClass = (category: string) => {
-    switch(category) {
-      case 'Review': 
+    switch (category) {
+      case 'Review':
         return 'bg-red-50 text-red-700 border border-red-100'
-      case 'Recommendation': 
+      case 'Recommendation':
         return 'bg-green-50 text-green-700 border border-green-100'
-      case 'News': 
+      case 'News':
         return 'bg-blue-50 text-blue-700 border border-blue-100'
-      case 'Watchlist': 
+      case 'Watchlist':
         return 'bg-orange-50 text-orange-700 border border-orange-100'
-      default: 
+      default:
         return 'bg-zinc-50 text-zinc-600 border border-zinc-200'
     }
   }
 
   // Helper to map category names to plural forms user requested
   const getFilterDisplayName = (cat: string) => {
-    if (cat === 'All') return '🎬 Alls'
+    if (cat === 'All') return '🎬 All'
     if (cat === 'Review') return '🍿 Reviews'
     if (cat === 'Recommendation') return '🌟 Recommendations'
-    if (cat === 'News') return '📰 Newss'
+    if (cat === 'News') return '📰 News'
     if (cat === 'Watchlist') return '📌 Watchlists'
     return cat
   }
@@ -64,37 +142,51 @@ export function FeedPage({ posts }: FeedPageProps) {
       {/* Categories Filter Tag Buttons + Sort Row */}
       <div className="flex gap-[12px] flex-wrap justify-center mb-4 px-4">
         {['All', 'Review', 'Recommendation', 'News', 'Watchlist'].map(cat => (
-          <button 
-            key={cat} 
+          <button
+            key={cat}
             onClick={() => setFilter(cat)}
-            className={`px-[16px] py-[8px] text-[13px] font-semibold border rounded-[30px] transition-all duration-200 cursor-pointer shadow-sm ${
-              filter === cat 
-                ? 'bg-red-600 border-red-600 text-white shadow' 
-                : 'bg-white border-zinc-200 text-zinc-600 hover:bg-red-50 hover:border-red-200 hover:text-red-600'
-            }`}
+            className={`px-[16px] py-[8px] text-[13px] font-semibold border rounded-[30px] transition-all duration-200 cursor-pointer shadow-sm ${filter === cat
+              ? 'bg-red-600 border-red-600 text-white shadow'
+              : 'bg-white border-zinc-200 text-zinc-600 hover:bg-red-50 hover:border-red-200 hover:text-red-600'
+              }`}
           >
             {getFilterDisplayName(cat)}
           </button>
         ))}
       </div>
 
+            {/* Search Bar */}
+      <div className="flex justify-center mb-4 px-4 w-full">
+        <div className="relative w-full max-w-md">
+          <svg className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search posts or authors..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-white border border-zinc-200 rounded-[8px] pl-10 pr-4 py-[9px] text-[13px] font-medium text-zinc-900 focus:outline-none focus:border-zinc-400 transition-colors shadow-sm placeholder-zinc-400"
+          />
+        </div>
+      </div>
+
       {/* Sort row */}
       <div className="flex items-center justify-center gap-3 mb-[35px] px-4">
         <span className="text-[13px] text-zinc-400 font-medium">Sort by:</span>
         {[
-          { key: 'newest', label: '🕐 Newest' },
+          { key: 'newest', label: 'Newest' },
           { key: 'oldest', label: 'Oldest' },
-          { key: 'highest', label: '⭐ Highest Rated' },
+          { key: 'highest', label: 'Highest Rated' },
           { key: 'lowest', label: 'Lowest Rated' },
         ].map(s => (
           <button
             key={s.key}
             onClick={() => setSort(s.key)}
-            className={`px-[12px] py-[5px] text-[12px] font-semibold rounded-[20px] border transition-all duration-200 cursor-pointer ${
-              sort === s.key
-                ? 'bg-zinc-900 border-zinc-900 text-white'
-                : 'bg-white border-zinc-200 text-zinc-500 hover:border-zinc-400 hover:text-zinc-800'
-            }`}
+            className={`px-[12px] py-[5px] text-[12px] font-semibold rounded-[20px] border transition-all duration-200 cursor-pointer ${sort === s.key
+              ? 'bg-zinc-900 border-zinc-900 text-white'
+              : 'bg-white border-zinc-200 text-zinc-500 hover:border-zinc-400 hover:text-zinc-800'
+              }`}
           >
             {s.label}
           </button>
@@ -103,7 +195,7 @@ export function FeedPage({ posts }: FeedPageProps) {
 
       {/* Split Grid Content Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 text-left w-full items-start px-4">
-        
+
         {/* Left column (2/3 width): Blog posts card list */}
         <div className="lg:col-span-2 space-y-8">
           {filteredPosts.length === 0 ? (
@@ -111,19 +203,20 @@ export function FeedPage({ posts }: FeedPageProps) {
               <p className="text-zinc-400">No posts found in this category.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {filteredPosts.map(post => (
-                <div 
-                  key={post.id} 
-                  className="flex flex-col group cursor-pointer" 
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {paginatedPosts.map(post => (
+                <div
+                  key={post.id}
+                  className="flex flex-col group cursor-pointer"
                   onClick={() => navigate(`/post/${post.id}`)}
                 >
                   {/* Card Image Banner */}
                   <div className="w-full h-[220px] rounded-[16px] overflow-hidden relative bg-zinc-100 border border-zinc-200 shadow-sm select-none">
-                    <img 
-                      src={post.image || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=800&auto=format&fit=crop'} 
-                      alt={post.title} 
-                      className="w-full h-full object-cover transition-transform duration-350 group-hover:scale-103" 
+                    <img
+                      src={post.image || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=800&auto=format&fit=crop'}
+                      alt={post.title}
+                      className="w-full h-full object-cover transition-transform duration-350 group-hover:scale-103"
                       onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=800&auto=format&fit=crop'; }}
                     />
                     {/* Floating absolute badge tag */}
@@ -159,13 +252,15 @@ export function FeedPage({ posts }: FeedPageProps) {
                   </p>
                 </div>
               ))}
-            </div>
+              </div>
+              <PaginationControls />
+            </>
           )}
         </div>
 
         {/* Right column (1/3 width): Sidebar widgets */}
         <aside className="space-y-8">
-          
+
           {/* Widget 1: Portal Critic Bio Card */}
           <div className="bg-white border border-zinc-200 rounded-[16px] p-6 shadow-sm">
             <h4 className="font-extrabold text-zinc-400 text-[11px] uppercase tracking-[1.5px] mb-4 select-none">About Portal</h4>
@@ -197,14 +292,17 @@ export function FeedPage({ posts }: FeedPageProps) {
           </div>
 
           {/* Widget 2: Featured Review Overlay Card */}
-          <div className="bg-black text-white rounded-[16px] overflow-hidden relative shadow-md p-6 h-[260px] flex flex-col justify-end group select-none">
+          <div
+            onClick={() => navigate('/post/3')}
+            className="bg-black text-white rounded-[16px] overflow-hidden relative shadow-md p-6 h-[260px] flex flex-col justify-end group select-none cursor-pointer"
+          >
             {/* Dark banner backdrop image */}
-            <div 
-              className="absolute inset-0 bg-cover bg-center opacity-60 transition-transform duration-500 group-hover:scale-103" 
+            <div
+              className="absolute inset-0 bg-cover bg-center opacity-60 transition-transform duration-500 group-hover:scale-103"
               style={{ backgroundImage: `url('https://images.unsplash.com/photo-1514539079130-25950c84af65?q=80&w=800&auto=format&fit=crop')` }}
             ></div>
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
-            
+
             <div className="relative z-10 text-left">
               <span className="bg-red-600 text-white text-[9px] uppercase font-bold tracking-[1.5px] px-2.5 py-1 rounded-full">
                 Featured review
@@ -278,18 +376,18 @@ export function FeedPage({ posts }: FeedPageProps) {
       <div className="bg-zinc-50 border border-zinc-200 rounded-[16px] p-8 md:p-10 text-center my-16 max-w-2xl mx-auto w-full shadow-sm">
         <h3 className="text-[24px] font-extrabold text-zinc-900">Subscribe to our Newsletter</h3>
         <p className="text-zinc-500 text-[14px] mt-1.5 mb-6">Stay updated with the latest film reviews, movie discussions, and community news.</p>
-        <form 
-          onSubmit={(e) => { e.preventDefault(); alert('Thank you for subscribing!'); }} 
+        <form
+          onSubmit={(e) => { e.preventDefault(); alert('Thank you for subscribing!'); }}
           className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto"
         >
-          <input 
-            type="email" 
-            placeholder="Enter your email address" 
-            required 
-            className="bg-white border border-zinc-200 px-4 py-2.5 rounded-[8px] text-[14px] focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 flex-grow" 
+          <input
+            type="email"
+            placeholder="Enter your email address"
+            required
+            className="bg-white border border-zinc-200 px-4 py-2.5 rounded-[8px] text-[14px] focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 flex-grow"
           />
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="bg-red-600 hover:bg-red-700 text-white font-semibold text-[14px] px-5 py-2.5 rounded-[8px] transition-colors cursor-pointer"
           >
             Subscribe

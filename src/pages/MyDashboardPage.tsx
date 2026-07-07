@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { BlogPost, User } from '../types'
 
@@ -9,20 +9,114 @@ interface MyDashboardPageProps {
 
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected'
 type ViewMode = 'grid' | 'list'
+type SortOption = 'newest' | 'oldest' | 'rating-high' | 'rating-low'
 
 export function MyDashboardPage({ currentUser, posts }: MyDashboardPageProps) {
   const navigate = useNavigate()
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('all')
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState<SortOption>('newest')
+  const [currentPage, setCurrentPage] = useState(1)
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [activeFilter, searchQuery, sortBy])
 
   const myPosts = posts.filter(p => p.author === currentUser.username)
   const pending = myPosts.filter(p => p.status === 'pending')
   const approved = myPosts.filter(p => p.status === 'approved')
   const rejected = myPosts.filter(p => p.status === 'rejected')
 
-  const displayedPosts = activeFilter === 'all'
+  let displayedPosts = activeFilter === 'all'
     ? myPosts
     : myPosts.filter(p => p.status === activeFilter)
+
+  // Apply search
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase()
+    displayedPosts = displayedPosts.filter(p => 
+      p.title.toLowerCase().includes(q) || 
+      p.content.toLowerCase().includes(q) || 
+      p.category.toLowerCase().includes(q)
+    )
+  }
+
+  // Apply sort
+  displayedPosts = [...displayedPosts].sort((a, b) => {
+    if (sortBy === 'newest') {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    } else if (sortBy === 'oldest') {
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    } else if (sortBy === 'rating-high') {
+      return (b.rating || 0) - (a.rating || 0)
+    } else if (sortBy === 'rating-low') {
+      return (a.rating || 0) - (b.rating || 0)
+    }
+    return 0
+  })
+
+  const POSTS_PER_PAGE = 6
+  const totalPages = Math.ceil(displayedPosts.length / POSTS_PER_PAGE)
+  const paginatedPosts = displayedPosts.slice((currentPage - 1) * POSTS_PER_PAGE, currentPage * POSTS_PER_PAGE)
+
+  const PaginationControls = ({ className = 'my-6 w-full' }: { className?: string }) => {
+    const displayTotal = Math.max(1, totalPages)
+
+    const getPageNumbers = () => {
+      const pages = []
+      if (displayTotal <= 5) {
+        for (let i = 1; i <= displayTotal; i++) pages.push(i)
+      } else {
+        if (currentPage <= 3) {
+          pages.push(1, 2, 3, 4, '...', displayTotal)
+        } else if (currentPage >= displayTotal - 2) {
+          pages.push(1, '...', displayTotal - 3, displayTotal - 2, displayTotal - 1, displayTotal)
+        } else {
+          pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', displayTotal)
+        }
+      }
+      return pages
+    }
+
+    return (
+      <div className={`flex items-center justify-center gap-1 ${className}`}>
+        <button 
+          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+          disabled={currentPage === 1}
+          className="w-8 h-8 flex items-center justify-center rounded-md border border-zinc-200 text-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-zinc-50 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+          </svg>
+        </button>
+        
+        {getPageNumbers().map((num, i) => (
+          num === '...' ? (
+            <span key={`ellipsis-${i}`} className="w-8 h-8 flex items-center justify-center text-zinc-400">...</span>
+          ) : (
+            <button
+              key={`page-${num}`}
+              onClick={() => setCurrentPage(num as number)}
+              className={`w-8 h-8 flex items-center justify-center rounded-md text-[13px] font-semibold transition-colors ${currentPage === num ? 'bg-zinc-900 text-white' : 'border border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}
+            >
+              {num}
+            </button>
+          )
+        ))}
+
+        <button 
+          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+          disabled={currentPage === displayTotal || displayTotal === 1}
+          className="w-8 h-8 flex items-center justify-center rounded-md border border-zinc-200 text-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-zinc-50 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+          </svg>
+        </button>
+      </div>
+    )
+  }
 
   const getCategoryBadge = (category: string) => {
     switch (category) {
@@ -35,11 +129,8 @@ export function MyDashboardPage({ currentUser, posts }: MyDashboardPageProps) {
   }
 
   const getStatusChip = (status: BlogPost['status']) => {
-    switch (status) {
-      case 'approved': return <span className="text-[10px] font-bold uppercase tracking-wider bg-green-100 text-green-700 px-2 py-0.5 rounded-full">✓ Published</span>
-      case 'rejected': return <span className="text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-700 px-2 py-0.5 rounded-full">✗ Rejected</span>
-      default: return <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">⏳ Pending</span>
-    }
+    const label = status === 'approved' ? 'Published' : status === 'rejected' ? 'Rejected' : 'Pending'
+    return <span className="text-[10px] font-bold uppercase tracking-wider bg-zinc-100 text-zinc-700 border border-zinc-200 px-2 py-0.5 rounded-full">{label}</span>
   }
 
   const GridCard = ({ post }: { post: BlogPost }) => (
@@ -156,11 +247,14 @@ export function MyDashboardPage({ currentUser, posts }: MyDashboardPageProps) {
     </div>
   )
 
+  const filterColor = 'border-zinc-200 text-zinc-600 hover:border-zinc-400 hover:bg-zinc-50'
+  const filterActive = 'bg-zinc-900 border-zinc-900 text-white'
+
   const filters: { key: StatusFilter; label: string; count: number; color: string; activeColor: string }[] = [
-    { key: 'all', label: 'All Posts', count: myPosts.length, color: 'border-zinc-200 text-zinc-600 hover:border-zinc-400', activeColor: 'bg-zinc-900 border-zinc-900 text-white' },
-    { key: 'pending', label: '⏳ Pending', count: pending.length, color: 'border-amber-200 text-amber-700 hover:border-amber-400 hover:bg-amber-50', activeColor: 'bg-amber-600 border-amber-600 text-white' },
-    { key: 'approved', label: '✅ Published', count: approved.length, color: 'border-green-200 text-green-700 hover:border-green-400 hover:bg-green-50', activeColor: 'bg-green-600 border-green-600 text-white' },
-    { key: 'rejected', label: '❌ Rejected', count: rejected.length, color: 'border-red-200 text-red-700 hover:border-red-400 hover:bg-red-50', activeColor: 'bg-red-600 border-red-600 text-white' },
+    { key: 'all', label: 'All Posts', count: myPosts.length, color: filterColor, activeColor: filterActive },
+    { key: 'pending', label: 'Pending', count: pending.length, color: filterColor, activeColor: filterActive },
+    { key: 'approved', label: 'Published', count: approved.length, color: filterColor, activeColor: filterActive },
+    { key: 'rejected', label: 'Rejected', count: rejected.length, color: filterColor, activeColor: filterActive },
   ]
 
   return (
@@ -168,12 +262,12 @@ export function MyDashboardPage({ currentUser, posts }: MyDashboardPageProps) {
       {/* Page Header */}
       <div className="flex items-center justify-between flex-wrap gap-4 mb-8">
         <div>
-          <h1 className="text-[32px] font-black text-zinc-950">My Dashboard</h1>
-          <p className="text-zinc-500 text-[14px] mt-0.5">Track your posts, manage rejections, and edit your content.</p>
+          <h1 className="text-[24px] md:text-[32px] font-black text-zinc-950">My Dashboard</h1>
+          <p className="text-zinc-500 text-[12px] md:text-[14px] mt-0.5">Track your posts, manage rejections, and edit your content.</p>
         </div>
         <button
           onClick={() => navigate('/upload')}
-          className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold px-5 py-2.5 rounded-[8px] text-[13px] transition-colors cursor-pointer shadow-sm"
+          className="flex items-center gap-1.5 md:gap-2 bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-2 md:px-5 md:py-2.5 rounded-[8px] text-[12px] md:text-[13px] transition-colors cursor-pointer shadow-sm"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -182,15 +276,14 @@ export function MyDashboardPage({ currentUser, posts }: MyDashboardPageProps) {
         </button>
       </div>
 
-      {/* Filter Tabs + View Toggle Row */}
-      <div className="flex items-center justify-between gap-4 flex-wrap mb-6">
-        {/* Status filter tabs */}
+      {/* Filter Tabs & Pagination */}
+      <div className="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex gap-2 flex-wrap">
           {filters.map(f => (
             <button
               key={f.key}
               onClick={() => setActiveFilter(f.key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-[30px] text-[13px] font-semibold border transition-all duration-200 cursor-pointer ${activeFilter === f.key ? f.activeColor : `bg-white ${f.color}`}`}
+              className={`flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-[30px] text-[11px] md:text-[13px] font-semibold border transition-all duration-200 cursor-pointer ${activeFilter === f.key ? f.activeColor : `bg-white ${f.color}`}`}
             >
               {f.label}
               <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${activeFilter === f.key ? 'bg-white/25 text-white' : 'bg-zinc-100 text-zinc-600'}`}>
@@ -199,9 +292,31 @@ export function MyDashboardPage({ currentUser, posts }: MyDashboardPageProps) {
             </button>
           ))}
         </div>
+        
+        {/* Top Pagination - Hidden on mobile */}
+        <div className="hidden md:block">
+          <PaginationControls className="w-auto" />
+        </div>
+      </div>
 
+      {/* Search, View, and Sort Row */}
+      <div className="flex items-center gap-2 mb-6 w-full overflow-x-auto pb-1 hide-scrollbar">
+        {/* Search */}
+        <div className="relative flex-grow min-w-[120px]">
+          <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search posts..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-white border border-zinc-200 rounded-[8px] pl-9 pr-3 py-[9px] text-[12px] md:text-[13px] font-medium text-zinc-900 focus:outline-none focus:border-zinc-400 transition-colors shadow-sm placeholder-zinc-400"
+          />
+        </div>
+        
         {/* View Mode Toggle */}
-        <div className="flex items-center gap-1 bg-white border border-zinc-200 rounded-[8px] p-1 shadow-sm">
+        <div className="flex items-center gap-1 bg-white border border-zinc-200 rounded-[8px] p-1 shadow-sm flex-shrink-0">
           <button
             onClick={() => setViewMode('grid')}
             title="Grid View"
@@ -221,6 +336,31 @@ export function MyDashboardPage({ currentUser, posts }: MyDashboardPageProps) {
             </svg>
           </button>
         </div>
+        
+        {/* Sort */}
+        <div className="relative flex-shrink-0">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none">
+            {/* Filter/Sort Icon (3 stacked centered lines) */}
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M5.25 12h13.5m-10.5 5.25h7.5" />
+            </svg>
+          </div>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortOption)}
+            className="appearance-none bg-white border border-zinc-200 rounded-[8px] pl-9 pr-7 py-[9px] text-[12px] md:text-[13px] font-semibold text-zinc-700 cursor-pointer focus:outline-none focus:border-zinc-400 transition-colors shadow-sm"
+          >
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="rating-high">Highest Rated</option>
+            <option value="rating-low">Lowest Rated</option>
+          </select>
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
+              <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+            </svg>
+          </div>
+        </div>
       </div>
 
       {/* Content */}
@@ -238,17 +378,23 @@ export function MyDashboardPage({ currentUser, posts }: MyDashboardPageProps) {
         </div>
       ) : displayedPosts.length === 0 ? (
         <div className="bg-white border border-zinc-200 rounded-[16px] p-10 text-center shadow-sm">
-          <p className="text-zinc-400 text-[14px]">No posts with this status.</p>
+          <p className="text-zinc-400 text-[14px]">No posts matched your search or filters.</p>
         </div>
       ) : (
         viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {displayedPosts.map(p => <GridCard key={p.id} post={p} />)}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {paginatedPosts.map(p => <GridCard key={p.id} post={p} />)}
+            </div>
+            <PaginationControls />
+          </>
         ) : (
-          <div className="flex flex-col gap-3">
-            {displayedPosts.map(p => <ListCard key={p.id} post={p} />)}
-          </div>
+          <>
+            <div className="flex flex-col gap-3">
+              {paginatedPosts.map(p => <ListCard key={p.id} post={p} />)}
+            </div>
+            <PaginationControls />
+          </>
         )
       )}
     </div>

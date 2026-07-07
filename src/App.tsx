@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import type { User, BlogPost } from './types'
 import { LandingPage } from './pages/LandingPage'
 import { InnerAppLayout } from './components/InnerAppLayout'
@@ -11,6 +11,16 @@ import { AdminReviewPage } from './pages/AdminReviewPage'
 import { PostDetailPage } from './pages/PostDetailPage'
 import { MyDashboardPage } from './pages/MyDashboardPage'
 import { EditPostPage } from './pages/EditPostPage'
+
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+  
+  return null
+}
 
 function App() {
   // Authentication & Blog States
@@ -130,9 +140,10 @@ function App() {
 
   return (
     <Router>
+      <ScrollToTop />
       <Routes>
         {/* Landing Page */}
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<LandingPage posts={posts} />} />
 
         {/* Standalone Login/Signup Route */}
         <Route path="/login" element={
