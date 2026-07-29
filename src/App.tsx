@@ -93,10 +93,14 @@ function App() {
         const parsed = JSON.parse(saved) as BlogPost[]
         // Migration: add status to existing posts if missing
         const migrated = parsed.map(p => ({ ...p, status: p.status || 'approved' as const }))
-        if (!migrated.some(p => p.id === '3')) {
-          return [initialPosts[0], ...migrated]
-        }
-        return migrated
+        
+        let finalPosts = [...migrated];
+        initialPosts.forEach(ip => {
+          if (!finalPosts.some(p => p.id === ip.id)) {
+            finalPosts.push(ip);
+          }
+        });
+        return finalPosts;
       } catch (e) {
         return initialPosts
       }
