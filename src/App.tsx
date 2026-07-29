@@ -64,6 +64,7 @@ function App() {
         createdAt: new Date('2026-07-02').toLocaleDateString(),
         image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=800&auto=format&fit=crop',
         status: 'approved'
+      },
       {
         id: '4',
         title: 'A Brief Review on the Suits of Harvey Specter',
